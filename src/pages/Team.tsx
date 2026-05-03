@@ -11,7 +11,9 @@ import {
   currentWeekKey,
   fetchWeeklyTopScores,
   hasSubmittedThisWeek,
+  submitDailyScore,
   submitWeeklyScore,
+  todayKey,
   type LeaderboardRow,
 } from '@/lib/game/leaderboard';
 
@@ -29,22 +31,29 @@ export default function Team({ state, onNavigate }: TeamProps) {
 
   const weekKey = useMemo(() => currentWeekKey(), []);
 
-  // Submit current XP to the shared leaderboard once per week, then fetch top scores.
+  // Submit current XP to the shared leaderboard:
+  //   - weekly mode (in-game roster panel)
+  //   - daily mode  (cross-game BKP — submits whenever XP rises today)
+  // then fetch top scores for the weekly panel.
   useEffect(() => {
     let cancelled = false;
     (async () => {
       if (!hasSubmittedThisWeek(weekKey) && state.xp > 0) {
         await submitWeeklyScore({ weekKey, state });
       }
+      // Always attempt the daily submit — submitDailyScore is idempotent
+      // per (day, score) and bails when XP hasn't risen since last submit.
+      await submitDailyScore({ day: todayKey(), state });
       const rows = await fetchWeeklyTopScores(weekKey, 25);
       if (!cancelled) setRemoteRows(rows);
     })();
     return () => {
       cancelled = true;
     };
-    // Re-submit only when the week changes; XP changes are captured at next visit.
+    // Re-submit when XP changes so the daily score keeps up; weekly+remote
+    // refresh is cheap and the daily call short-circuits when not needed.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [weekKey]);
+  }, [weekKey, state.xp]);
 
   const leaderboard = useMemo(
     () => mergeLeaderboard(getWeeklyLeaderboard(state.xp, state.playerName), remoteRows, state.playerName),
