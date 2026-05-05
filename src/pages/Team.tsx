@@ -11,9 +11,7 @@ import {
   currentWeekKey,
   fetchWeeklyTopScores,
   hasSubmittedThisWeek,
-  submitDailyScore,
   submitWeeklyScore,
-  todayKey,
   type LeaderboardRow,
 } from '@/lib/game/leaderboard';
 
@@ -24,34 +22,18 @@ interface TeamProps {
 
 type Tab = 'leaderboard' | 'roster';
 
-type BkpStatus = 'idle' | 'no-name' | 'submitted' | 'unchanged' | 'error';
-
 export default function Team({ state, onNavigate }: TeamProps) {
   const [tab, setTab] = useState<Tab>('leaderboard');
   const [selectedResearcher, setSelectedResearcher] = useState<Researcher | null>(null);
   const [remoteRows, setRemoteRows] = useState<LeaderboardRow[]>([]);
-  const [bkpStatus, setBkpStatus] = useState<BkpStatus>('idle');
 
   const weekKey = useMemo(() => currentWeekKey(), []);
 
-  // Submit current XP to the shared leaderboard:
-  //   - weekly mode (in-game roster panel)
-  //   - daily mode  (cross-game BKP — submits whenever XP rises today)
-  // then fetch top scores for the weekly panel.
   useEffect(() => {
     let cancelled = false;
     (async () => {
       if (!hasSubmittedThisWeek(weekKey) && state.xp > 0) {
         await submitWeeklyScore({ weekKey, state });
-      }
-      // Always attempt the daily submit — submitDailyScore is idempotent
-      // per (day, score) and bails when XP hasn't risen since last submit.
-      const result = await submitDailyScore({ day: todayKey(), state });
-      if (!cancelled) {
-        if (!state.playerName.trim()) setBkpStatus('no-name');
-        else if (!result.ok) setBkpStatus('error');
-        else if (result.submitted) setBkpStatus('submitted');
-        else setBkpStatus('unchanged');
       }
       const rows = await fetchWeeklyTopScores(weekKey, 25);
       if (!cancelled) setRemoteRows(rows);
@@ -59,8 +41,6 @@ export default function Team({ state, onNavigate }: TeamProps) {
     return () => {
       cancelled = true;
     };
-    // Re-submit when XP changes so the daily score keeps up; weekly+remote
-    // refresh is cheap and the daily call short-circuits when not needed.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weekKey, state.xp, state.playerName]);
 
@@ -139,69 +119,33 @@ export default function Team({ state, onNavigate }: TeamProps) {
               </div>
             </div>
 
-            {/* BKP / cross-game leaderboard status — makes the score-logging
-                pipeline visible to the player. */}
+            {/* This long-form game tracks weekly XP here, not the cross-game daily BKP board. */}
             <div
               className="rounded-xl p-3"
               style={{
-                background: bkpStatus === 'no-name' ? '#3a1a1a' : '#0c1a12',
-                border: `1px solid ${bkpStatus === 'no-name' ? '#7a3030' : '#2a4030'}`,
+                background: '#0c1a12',
+                border: '1px solid #2a4030',
               }}
             >
               <div className="flex items-start gap-3">
-                <div className="text-lg leading-none mt-0.5">
-                  {bkpStatus === 'no-name' ? '⚠️' : bkpStatus === 'error' ? '✗' : '✓'}
-                </div>
+                <div className="text-lg leading-none mt-0.5">ℹ️</div>
                 <div className="flex-1 min-w-0">
                   <div
                     className="text-[10px] font-semibold tracking-[0.18em] uppercase"
                     style={{ color: '#c9a84c' }}
                   >
-                    BioKEA Leaderboard
+                    BioKEA Daily Leaderboard
                   </div>
                   <div className="text-[12px] mt-1" style={{ color: '#e8e4d8' }}>
-                    {bkpStatus === 'no-name' && (
-                      <>
-                        No name set —{' '}
-                        <button
-                          onClick={() => onNavigate('hq')}
-                          className="underline font-semibold"
-                          style={{ color: '#c9a84c' }}
-                        >
-                          set a name in HQ → Field File
-                        </button>{' '}
-                        to start posting scores.
-                      </>
-                    )}
-                    {bkpStatus === 'error' && (
-                      <>Couldn't reach the leaderboard. Your local progress is safe; we'll retry.</>
-                    )}
-                    {(bkpStatus === 'submitted' || bkpStatus === 'unchanged' || bkpStatus === 'idle') && (
-                      <>
-                        Posted as{' '}
-                        <span className="font-bold" style={{ color: '#c9a84c' }}>
-                          {state.playerName}
-                        </span>{' '}
-                        — earning BKP across all six BioKEA games.{' '}
-                        <a
-                          href="https://biokea.ai/mission/games/leaderboard"
-                          target="_top"
-                          className="underline font-semibold"
-                          style={{ color: '#c9a84c' }}
-                        >
-                          View ↗
-                        </a>
-                      </>
-                    )}
-                  </div>
-                  <div className="text-[10px] mt-1" style={{ color: '#8aaa7a' }}>
-                    {bkpStatus === 'submitted'
-                      ? 'Today\'s XP just synced.'
-                      : bkpStatus === 'unchanged'
-                        ? 'Today\'s XP already on the board.'
-                        : bkpStatus === 'idle'
-                          ? 'Syncing…'
-                          : ''}
+                    Cal Field Lab is a long-form game and doesn't post to the daily leaderboard.{' '}
+                    <a
+                      href="https://biokea.ai/mission/games/leaderboard"
+                      target="_top"
+                      className="underline font-semibold"
+                      style={{ color: '#c9a84c' }}
+                    >
+                      See the four arcade games ↗
+                    </a>
                   </div>
                 </div>
               </div>
