@@ -2,7 +2,9 @@
 // No asset files — all tones are generated at play time.
 
 let audioCtx: AudioContext | null = null;
-let enabled = true;
+// Default to OFF on first visit. Once the player toggles, "0"/"1" is
+// stored in localStorage and isSoundEnabled() reflects that.
+let enabled = false;
 
 function getCtx(): AudioContext | null {
   if (typeof window === 'undefined') return null;
