@@ -119,7 +119,7 @@ export default function Team({ state, onNavigate }: TeamProps) {
               </div>
             </div>
 
-            {/* This long-form game tracks weekly XP here, not the cross-game daily BKP board. */}
+            {/* This long-form game tracks weekly XP here, not the cross-game daily leaderboard. */}
             <div
               className="rounded-xl p-3"
               style={{

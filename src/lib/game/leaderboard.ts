@@ -65,7 +65,7 @@ export function markSubmittedThisWeek(weekKey: string, score: number) {
 
 // Submit today's XP to the cross-game leaderboard. Idempotent per day if
 // the recorded score hasn't risen — avoids spamming Supabase on every
-// Team-page revisit. Mode 'daily' + seed=YYYY-MM-DD matches the BKP
+// Team-page revisit. Mode 'daily' + seed=YYYY-MM-DD matches the
 // `ranked_modes` lookup in website-biokea migration 0003.
 export async function submitDailyScore(args: {
   day: string
