@@ -19,6 +19,7 @@ import SkillTree from '@/pages/SkillTree';
 import Museum from '@/pages/Museum';
 import MoreMenu from '@/pages/MoreMenu';
 import OnboardingModal from '@/components/OnboardingModal';
+import { BiokeaLeaderboardPrompt } from '@/components/BiokeaLeaderboardPrompt';
 import RegionUnlockModal from '@/components/RegionUnlockModal';
 import CrossSavePrompt, { shouldShowCrossSavePrompt, hasCrossSaveBadge } from '@/components/CrossSavePrompt';
 import BottomTabBar from '@/components/BottomTabBar';
@@ -171,6 +172,18 @@ function GameShell({ slot, onSwitchResearcher }: GameShellProps) {
     setShowOnboarding(false);
   }, [onboardingKey]);
 
+  // Show the BioKEA leaderboard prompt at game-start when the player still
+  // has the default 'Researcher' handle. This is the long-form game's
+  // chance to capture a real handle + optional email subscription before
+  // the player goes deep — same modal shape as the arcade games' game-end
+  // version, just triggered earlier in the arc.
+  const [biokeaPromptOpen, setBiokeaPromptOpen] = useState(false);
+  useEffect(() => {
+    if (showOnboarding) return;
+    if (state.playerName && state.playerName !== 'Researcher') return;
+    setBiokeaPromptOpen(true);
+  }, [showOnboarding, state.playerName]);
+
   const handleNavigate = useCallback((page: string) => {
     if (page === 'file-select') {
       onSwitchResearcher();
@@ -311,6 +324,18 @@ function GameShell({ slot, onSwitchResearcher }: GameShellProps) {
       )}
 
       {showOnboarding && currentPage === 'hq' && <OnboardingModal onComplete={completeOnboarding} />}
+      {biokeaPromptOpen && !showOnboarding && (
+        <BiokeaLeaderboardPrompt
+          trigger="game-start"
+          gameSlug="cal-field-lab-collectible"
+          gameTitle="Biodiversity Discovery Lab"
+          defaultHandle={state.playerName === 'Researcher' ? '' : state.playerName}
+          onSubmit={(result) => {
+            renamePlayer(result.handle);
+            setBiokeaPromptOpen(false);
+          }}
+        />
+      )}
       {unlockModal && <RegionUnlockModal region={unlockModal} onDismiss={() => setUnlockModal(null)} />}
       {showCrossSavePrompt && !showOnboarding && !unlockModal && (
         <CrossSavePrompt
