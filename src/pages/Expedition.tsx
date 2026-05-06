@@ -785,25 +785,33 @@ export default function Expedition({
                   }}
                   onClick={e => e.stopPropagation()}
                 >
-                  <div className="text-xs font-semibold mb-3" style={{ color: RARITY_COLORS[lastCollected.rarity as keyof typeof RARITY_COLORS], letterSpacing: '2px' }}>
-                    SPECIMEN COLLECTED
+                  <div className="text-xs font-semibold mb-3" style={{ color: '#c9a84c', letterSpacing: '2px' }}>
+                    DNA COLLECTED
                   </div>
-                  <div className="text-6xl mb-4 animate-bounce">{lastCollected.emoji}</div>
+                  {/*
+                    The actual species + emoji is intentionally not
+                    revealed here — discovery happens at the lab. We
+                    show only the broad sample type so the player knows
+                    what the field collection will look like under the
+                    microscope, not what species ended up in the vial.
+                    Soil/net samples surface their broad-organism category
+                    (insect, microbe, etc.); other methods just say "DNA".
+                  */}
+                  <div className="text-5xl mb-4">🧬</div>
                   <div className="text-lg font-bold mb-1" style={{ color: '#e8e4d8', fontFamily: 'Georgia, serif' }}>
-                    {lastCollected.speciesName}
+                    {(() => {
+                      const method = lastCollected.specimen.samplingMethod;
+                      if (method === 'scoop') return 'Soil sample · mixed organisms';
+                      if (method === 'hand-net' || method === 'car-trap') return 'Net sample · airborne organisms';
+                      if (method === 'plankton-net') return 'Plankton sample · microorganisms';
+                      return 'DNA sample';
+                    })()}
                   </div>
-                  <div
-                    className="inline-block px-3 py-1 rounded-full text-xs font-semibold mt-2"
-                    style={{
-                      background: `${RARITY_COLORS[lastCollected.rarity as keyof typeof RARITY_COLORS]}20`,
-                      color: RARITY_COLORS[lastCollected.rarity as keyof typeof RARITY_COLORS],
-                      border: `1px solid ${RARITY_COLORS[lastCollected.rarity as keyof typeof RARITY_COLORS]}40`,
-                    }}
-                  >
-                    {lastCollected.rarity.toUpperCase()}
-                  </div>
-                  <p className="text-xs mt-4" style={{ color: '#8aaa7a' }}>
-                    Added to lab queue for processing
+                  <p className="text-xs mt-3" style={{ color: '#8aaa7a' }}>
+                    Let's sequence this to see what it is.
+                  </p>
+                  <p className="text-[11px] mt-2 italic" style={{ color: '#6a8a6a' }}>
+                    Added to lab queue · run it through the pipeline to find out
                   </p>
                   <button
                     onClick={() => { setShowResult(false); setLastCollected(null); }}

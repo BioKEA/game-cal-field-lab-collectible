@@ -434,6 +434,15 @@ export default function Lab({ state, onNavigate, onAdvanceLab, onDiscovery }: La
                     </span>
                   )}
                 </button>
+                {!processing && !hasReagent && (
+                  <button
+                    onClick={() => onNavigate('shop')}
+                    className="mt-2 w-full text-xs underline transition-colors"
+                    style={{ color: '#c9a84c' }}
+                  >
+                    Buy more {reagentName} in the Supply Depot →
+                  </button>
+                )}
               </div>
             );
           })()}
