@@ -92,7 +92,11 @@ export function getRegionCatalogPct(regionId: RegionId, state: GameState): numbe
  * Tier 1 is always open. Tier N requires 60% of tier N-1 catalogued.
  */
 export function isTierUnlocked(tier: number, state: GameState): boolean {
-  if (state.devMode) return true;
+  // Dev-mode tier bypass only applies under `vite dev`. In production
+  // builds (import.meta.env.DEV === false) the flag is ignored even
+  // if a save somehow carries it, so a forged or imported devMode
+  // save can't unlock locked content on biokea.ai.
+  if (import.meta.env.DEV && state.devMode) return true;
   if (tier <= 1) return true;
   const priorRegion = getRegionByTier(tier - 1);
   if (!priorRegion) return false;

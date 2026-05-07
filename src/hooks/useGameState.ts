@@ -121,7 +121,10 @@ function createDevState(): GameState {
 }
 
 function clampDevResources(s: GameState): GameState {
-  if (!s.devMode) return s;
+  // Production builds short-circuit devMode resource boosts entirely —
+  // even a save flagged devMode=true will be treated as a normal save
+  // when import.meta.env.DEV is false (i.e. on biokea.ai).
+  if (!import.meta.env.DEV || !s.devMode) return s;
   return {
     ...s,
     bioCredits: Math.max(s.bioCredits, 999999),
@@ -395,9 +398,11 @@ export function useGameState(slot: number) {
     localStorage.setItem(slotKey(slot), JSON.stringify(state));
   }, [state, slot]);
 
-  // Dev mode: keep resources maxed after any state change
+  // Dev mode: keep resources maxed after any state change. Gated by
+  // import.meta.env.DEV so the auto-replenish loop is dead code in
+  // production.
   useEffect(() => {
-    if (!state.devMode) return;
+    if (!import.meta.env.DEV || !state.devMode) return;
     const clamped = clampDevResources(state);
     if (
       clamped.bioCredits !== state.bioCredits ||

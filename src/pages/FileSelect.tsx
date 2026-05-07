@@ -180,28 +180,37 @@ export default function FileSelect({ onSelectSlot }: FileSelectProps) {
           >
             {mode === 'erase' ? '✕ CANCEL' : 'ERASE'}
           </button>
-          <button
-            onClick={() => {
-              const emptyIdx = slots.findIndex(s => s === null);
-              if (emptyIdx === -1) {
-                eraseSlot(SLOT_COUNT);
-                createDevSlot(SLOT_COUNT);
-                onSelectSlot(SLOT_COUNT);
-              } else {
-                const slotNum = emptyIdx + 1;
-                createDevSlot(slotNum);
-                onSelectSlot(slotNum);
-              }
-            }}
-            className="px-4 py-2 rounded text-[10px] tracking-[0.25em] font-bold transition-all hover:scale-[1.04] active:scale-[0.97]"
-            style={{
-              background: 'transparent',
-              border: '1.5px solid #4a3a8a',
-              color: '#8a7acc',
-            }}
-          >
-            🛠️ DEV MODE
-          </button>
+          {/*
+            DEV MODE creates a save slot with all regions unlocked +
+            unlimited reagents. Useful for developers / testing, but
+            it's not a player feature — gate it behind import.meta.env
+            .DEV so it only renders under `vite dev`, never in the
+            production bundle served from biokea.ai.
+          */}
+          {import.meta.env.DEV && (
+            <button
+              onClick={() => {
+                const emptyIdx = slots.findIndex(s => s === null);
+                if (emptyIdx === -1) {
+                  eraseSlot(SLOT_COUNT);
+                  createDevSlot(SLOT_COUNT);
+                  onSelectSlot(SLOT_COUNT);
+                } else {
+                  const slotNum = emptyIdx + 1;
+                  createDevSlot(slotNum);
+                  onSelectSlot(slotNum);
+                }
+              }}
+              className="px-4 py-2 rounded text-[10px] tracking-[0.25em] font-bold transition-all hover:scale-[1.04] active:scale-[0.97]"
+              style={{
+                background: 'transparent',
+                border: '1.5px solid #4a3a8a',
+                color: '#8a7acc',
+              }}
+            >
+              🛠️ DEV MODE
+            </button>
+          )}
           <div
             className="text-[9px] italic opacity-60"
             style={{ color: '#5a7a5a', fontFamily: "'Cinzel', Georgia, serif" }}
@@ -415,7 +424,13 @@ function SlotCard({
           ERASE
         </div>
       )}
-      {!isEraseMode && save.devMode && (
+      {/*
+        DEV badge on a save slot. Gated under import.meta.env.DEV — a
+        production build won't render it even on saves whose devMode
+        flag is true (e.g. saves created in dev and exported via
+        localStorage to a production browser).
+      */}
+      {!isEraseMode && save.devMode && import.meta.env.DEV && (
         <div
           className="absolute top-2 right-2 text-[9px] tracking-widest font-bold px-2 py-0.5 rounded"
           style={{ background: '#4a3a8a30', color: '#8a7acc', border: '1px solid #4a3a8a' }}
