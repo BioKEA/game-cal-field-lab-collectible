@@ -258,6 +258,7 @@ function GameShell({ slot, onSwitchResearcher }: GameShellProps) {
             onNavigate={handleNavigate}
             onAdvanceLab={advanceLabStage}
             onDiscovery={handleDiscovery}
+            onPurchase={purchaseItem}
           />
         )}
         {currentPage === 'discovery' && discoverySpecimenId && (

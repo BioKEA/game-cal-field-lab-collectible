@@ -13,6 +13,10 @@ interface LabProps {
   onNavigate: (page: string) => void;
   onAdvanceLab: (specimenId: string, barcodeBonus?: number) => void;
   onDiscovery: (specimenId: string) => void;
+  // Same signature as Shop's purchaseItem; lets Lab buy a single
+  // reagent inline when the player runs out mid-pipeline rather than
+  // forcing a Supply-Depot navigation.
+  onPurchase: (itemId: string, price: number, effect: { type: string; key?: string; amount?: number }) => void;
 }
 
 const LAB_STAGES = [
@@ -46,7 +50,17 @@ function getReagentName(stage: string): string {
   }
 }
 
-export default function Lab({ state, onNavigate, onAdvanceLab, onDiscovery }: LabProps) {
+// Inline single-unit reagent prices. Per-unit floor of the cheapest
+// matching Shop entries (Extraction Kits + Primer Sets: 25/5 = 5;
+// Flow Cell Bundle: 100/3 = ~34, rounded up to 35 for a small
+// "convenience" tax over going to the Supply Depot).
+const QUICK_BUY: Record<string, { price: number; label: string }> = {
+  extractionKits: { price: 5, label: 'Extraction Kit' },
+  pcrPrimers: { price: 5, label: 'PCR Primer' },
+  flowCells: { price: 35, label: 'Flow Cell' },
+};
+
+export default function Lab({ state, onNavigate, onAdvanceLab, onDiscovery, onPurchase }: LabProps) {
   const [selectedSpecimenId, setSelectedSpecimenId] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const [detailSpecimenId, setDetailSpecimenId] = useState<string | null>(null);
@@ -523,15 +537,43 @@ export default function Lab({ state, onNavigate, onAdvanceLab, onDiscovery }: La
                     </button>
                   );
                 })()}
-                {!processing && !hasReagent && (
-                  <button
-                    onClick={() => onNavigate('shop')}
-                    className="w-full text-xs underline transition-colors"
-                    style={{ color: '#c9a84c' }}
-                  >
-                    Buy more {reagentName} in the Supply Depot →
-                  </button>
-                )}
+                {!processing && !hasReagent && reagentKey && (() => {
+                  const qb = QUICK_BUY[reagentKey];
+                  if (!qb) return null;
+                  const canAfford = state.bioCredits >= qb.price;
+                  return (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          if (!canAfford) return;
+                          onPurchase(`quick-${reagentKey}`, qb.price, {
+                            type: 'add-reagent',
+                            key: reagentKey,
+                            amount: 1,
+                          });
+                        }}
+                        disabled={!canAfford}
+                        className="flex-1 rounded-lg px-3 py-2 text-xs font-semibold transition-all hover:scale-[1.01] active:scale-[0.97] disabled:opacity-50"
+                        style={{
+                          background: canAfford
+                            ? 'linear-gradient(135deg, #2a3a55, #1a2a40)'
+                            : '#14231a',
+                          border: `1.5px solid ${canAfford ? '#60a5fa' : '#2a4030'}`,
+                          color: canAfford ? '#bfdbfe' : '#5a7a5a',
+                        }}
+                      >
+                        ⚡ Quick-buy {qb.label} · {qb.price} cr
+                      </button>
+                      <button
+                        onClick={() => onNavigate('shop')}
+                        className="rounded-lg px-3 py-2 text-xs transition-colors"
+                        style={{ color: '#c9a84c', border: '1px solid #2a4030' }}
+                      >
+                        Depot →
+                      </button>
+                    </div>
+                  );
+                })()}
               </div>
             );
           })()}
