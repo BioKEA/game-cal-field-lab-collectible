@@ -87,6 +87,58 @@ export default function Lab({ state, onNavigate, onAdvanceLab, onDiscovery }: La
     }, 2400);
   }, [selectedSpecimen, processing, state.reagents, onAdvanceLab]);
 
+  // One-click pipeline — chains every remaining stage on the selected
+  // specimen with brief inter-stage animation, then opens the barcode
+  // mini-game at the end. Player feedback: "one-click pipeline (sample
+  // → process → catalog without intermediate clicks)." We keep the
+  // mini-game intercept so the bonus is still earnable; if the player
+  // wants to skip it they hit the existing skip button.
+  const handleRunAll = useCallback(() => {
+    if (!selectedSpecimen || processing) return;
+    const specimenId = selectedSpecimen.id;
+    let currentStatus: CollectedSpecimen['labStatus'] = selectedSpecimen.labStatus;
+
+    // Pre-flight: count remaining stages we have reagents for.
+    const remainingStages: typeof LAB_STAGES[number]['key'][] = [];
+    let reagentSnapshot = { ...state.reagents };
+    let cursor = getStageIndex(currentStatus);
+    while (cursor + 1 < LAB_STAGES.length) {
+      const next = LAB_STAGES[cursor + 1];
+      const rk = getReagentForStage(next.key);
+      if (rk) {
+        const have = reagentSnapshot[rk as keyof typeof reagentSnapshot];
+        if (have <= 0) break;
+        reagentSnapshot = { ...reagentSnapshot, [rk]: have - 1 };
+      }
+      remainingStages.push(next.key);
+      cursor++;
+    }
+    if (remainingStages.length === 0) return;
+
+    setProcessing(true);
+    let stepIdx = 0;
+    const STEP_MS = 800; // tighter than the single-step 2400ms; still visible
+
+    const step = () => {
+      if (stepIdx >= remainingStages.length) {
+        setProcessing(false);
+        return;
+      }
+      const nextKey = remainingStages[stepIdx];
+      stepIdx++;
+      currentStatus = nextKey;
+      if (nextKey === 'identified') {
+        // Final stage gets the mini-game intercept like a normal advance.
+        setProcessing(false);
+        setBarcodeSpecimenId(specimenId);
+        return;
+      }
+      onAdvanceLab(specimenId);
+      setTimeout(step, STEP_MS);
+    };
+    setTimeout(step, STEP_MS);
+  }, [selectedSpecimen, processing, state.reagents, onAdvanceLab]);
+
   const handleBarcodeComplete = useCallback((bonus: number) => {
     const id = barcodeSpecimenId;
     if (!id) return;
@@ -405,7 +457,7 @@ export default function Lab({ state, onNavigate, onAdvanceLab, onDiscovery }: La
             const reagentName = getReagentName(nextStage.key);
 
             return (
-              <div className="shrink-0 px-3 pb-3 pt-1.5">
+              <div className="shrink-0 px-3 pb-3 pt-1.5 space-y-2">
                 <button
                   onClick={handleAdvance}
                   disabled={processing || !hasReagent}
@@ -434,10 +486,47 @@ export default function Lab({ state, onNavigate, onAdvanceLab, onDiscovery }: La
                     </span>
                   )}
                 </button>
+                {/* One-click full pipeline. Hidden when there's only one
+                    stage left (the single button already covers it) or
+                    when we don't have reagents for the next step. */}
+                {(() => {
+                  if (processing || !hasReagent) return null;
+                  const stagesLeft = LAB_STAGES.length - 1 - getStageIndex(selectedSpecimen.labStatus);
+                  if (stagesLeft < 2) return null;
+                  // Only count stages we can actually fund right now.
+                  let snap = { ...state.reagents };
+                  let runnable = 0;
+                  let cur = getStageIndex(selectedSpecimen.labStatus);
+                  while (cur + 1 < LAB_STAGES.length) {
+                    const next = LAB_STAGES[cur + 1];
+                    const rk = getReagentForStage(next.key);
+                    if (rk) {
+                      const have = snap[rk as keyof typeof snap];
+                      if (have <= 0) break;
+                      snap = { ...snap, [rk]: have - 1 };
+                    }
+                    runnable++;
+                    cur++;
+                  }
+                  if (runnable < 2) return null;
+                  return (
+                    <button
+                      onClick={handleRunAll}
+                      className="w-full rounded-lg px-3 py-2 text-center text-sm font-semibold transition-all hover:scale-[1.01] active:scale-[0.97]"
+                      style={{
+                        background: 'linear-gradient(135deg, #14231a, #0c1a12)',
+                        border: '1.5px solid #c9a84c',
+                        color: '#c9a84c',
+                      }}
+                    >
+                      ⚡ Run full pipeline (×{runnable})
+                    </button>
+                  );
+                })()}
                 {!processing && !hasReagent && (
                   <button
                     onClick={() => onNavigate('shop')}
-                    className="mt-2 w-full text-xs underline transition-colors"
+                    className="w-full text-xs underline transition-colors"
                     style={{ color: '#c9a84c' }}
                   >
                     Buy more {reagentName} in the Supply Depot →
