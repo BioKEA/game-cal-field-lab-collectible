@@ -139,7 +139,7 @@ export default function Team({ state, onNavigate }: TeamProps) {
                   <div className="text-[12px] mt-1" style={{ color: '#e8e4d8' }}>
                     Cal Field Lab is a long-form game and doesn't post to the daily leaderboard.{' '}
                     <a
-                      href="https://biokea.ai/mission/games/leaderboard"
+                      href="https://games.biokea.ai/leaderboard"
                       target="_top"
                       className="underline font-semibold"
                       style={{ color: '#c9a84c' }}
