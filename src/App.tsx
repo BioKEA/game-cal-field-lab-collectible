@@ -1,23 +1,30 @@
-import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo, lazy, Suspense } from 'react';
 import { Toaster } from 'sonner';
 import { useGameState, ACTIVE_SLOT_KEY } from '@/hooks/useGameState';
 import FileSelect from '@/pages/FileSelect';
 import HQ from '@/pages/HQ';
-import Expedition from '@/pages/Expedition';
-import Lab from '@/pages/Lab';
-import DiscoveryReveal from '@/pages/DiscoveryReveal';
-import Catalog from '@/pages/Catalog';
-import Shop from '@/pages/Shop';
-import FieldNotes from '@/pages/FieldNotes';
-import Achievements from '@/pages/Achievements';
-import Stats from '@/pages/Stats';
-import Biomes from '@/pages/Biomes';
-import Missions from '@/pages/Missions';
-import Requests from '@/pages/Requests';
-import Team from '@/pages/Team';
-import SkillTree from '@/pages/SkillTree';
-import Museum from '@/pages/Museum';
-import MoreMenu from '@/pages/MoreMenu';
+
+// Every page except HQ (the landing page) is code-split so the first
+// paint only ships HQ, its hero map, and the shared modals. Pages load
+// on first visit and are cached by the browser afterwards.
+const Expedition = lazy(() => import('@/pages/Expedition'));
+const Lab = lazy(() => import('@/pages/Lab'));
+const DiscoveryReveal = lazy(() => import('@/pages/DiscoveryReveal'));
+const Catalog = lazy(() => import('@/pages/Catalog'));
+const Shop = lazy(() => import('@/pages/Shop'));
+const FieldNotes = lazy(() => import('@/pages/FieldNotes'));
+const Achievements = lazy(() => import('@/pages/Achievements'));
+const Stats = lazy(() => import('@/pages/Stats'));
+const Biomes = lazy(() => import('@/pages/Biomes'));
+const Missions = lazy(() => import('@/pages/Missions'));
+const Requests = lazy(() => import('@/pages/Requests'));
+const Team = lazy(() => import('@/pages/Team'));
+const SkillTree = lazy(() => import('@/pages/SkillTree'));
+const Museum = lazy(() => import('@/pages/Museum'));
+const MoreMenu = lazy(() => import('@/pages/MoreMenu'));
+
+// Same background as the shell so a lazy page's brief load never flashes.
+const PageFallback = () => <div className="min-h-screen" style={{ background: '#0a1610' }} />;
 import OnboardingModal from '@/components/OnboardingModal';
 import { BiokeaLeaderboardPrompt } from '@/components/BiokeaLeaderboardPrompt';
 import RegionUnlockModal from '@/components/RegionUnlockModal';
@@ -235,6 +242,7 @@ function GameShell({ slot, onSwitchResearcher }: GameShellProps) {
         key={pageKey}
         className={`animate-page-in ${showTabBar(currentPage) ? 'pb-[64px] md:pb-0 md:pl-[68px]' : ''}`}
       >
+        <Suspense fallback={<PageFallback />}>
         {currentPage === 'hq' && (
           <HQ state={state} onNavigate={handleNavigate} onClaimChallenge={claimChallengeReward} onClaimMilestone={claimMilestone} onPublishResearch={publishResearch} onRenamePlayer={renamePlayer} onSetAvatar={setAvatar} />
         )}
@@ -310,6 +318,7 @@ function GameShell({ slot, onSwitchResearcher }: GameShellProps) {
         {currentPage === 'more' && (
           <MoreMenu state={state} onNavigate={handleNavigate} onResetGame={resetGame} />
         )}
+        </Suspense>
       </div>
 
       {/* Bottom tab bar */}
@@ -329,7 +338,7 @@ function GameShell({ slot, onSwitchResearcher }: GameShellProps) {
         <BiokeaLeaderboardPrompt
           trigger="game-start"
           gameSlug="cal-field-lab-collectible"
-          gameTitle="Biodiversity Discovery Lab"
+          gameTitle="Cal Field Lab"
           defaultHandle={state.playerName === 'Researcher' ? '' : state.playerName}
           onSubmit={(result) => {
             renamePlayer(result.handle);

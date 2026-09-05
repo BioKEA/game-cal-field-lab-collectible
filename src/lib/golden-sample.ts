@@ -1,6 +1,6 @@
 // src/lib/golden-sample.ts
 //
-// Biodiversity Discovery Lab's slice of the Golden Sample 26 hunt.
+// Cal Field Lab's slice of the Golden Sample 26 hunt.
 // Slot 3 unlocks once 5 specimens have reached the "identified" lab
 // stage. Long-form games like this don't post to the shared `scores`
 // table, so we report a milestone counter directly to the central
