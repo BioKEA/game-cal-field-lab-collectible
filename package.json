@@ -7,9 +7,13 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "typecheck": "tsc -b",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
+    "@biokea/leaderboard": "github:BioKEA/games-leaderboard-js#main",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -33,7 +37,6 @@
     "@radix-ui/react-switch": "^1.2.6",
     "@radix-ui/react-tabs": "^1.1.13",
     "@radix-ui/react-tooltip": "^1.2.8",
-    "@biokea/leaderboard": "github:BioKEA/games-leaderboard-js#main",
     "@supabase/supabase-js": "^2.99.1",
     "@tanstack/react-query": "^5.62.0",
     "@types/howler": "^2.2.12",
@@ -59,14 +62,16 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@types/node": "22.10.5",
     "@types/react": "18.3.18",
     "@types/react-dom": "18.3.5",
-    "@types/node": "22.10.5",
     "@vitejs/plugin-react": "5.1.4",
     "autoprefixer": "10.4.21",
+    "jsdom": "^26.1.0",
     "postcss": "8.5.8",
     "tailwindcss": "3.4.17",
     "typescript": "5.9.3",
-    "vite": "6.4.1"
+    "vite": "6.4.1",
+    "vitest": "^3.2.7"
   }
 }

@@ -1,13 +1,10 @@
-import { defineConfig } from 'vite'
+/// <reference types="vitest/config" />
+import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 
 export default defineConfig({
-  plugins: [react(), ],
-  // node_modules is a symlink into /opt/baku-templates — keep Vite's dep
-  // cache (default: node_modules/.vite) co-located with the project instead
-  // of writing through the symlink into the template tree.
-  cacheDir: './.vite',
+  plugins: [react()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -16,5 +13,9 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 3000,
+  },
+  test: {
+    environment: 'node',
+    include: ['src/**/*.test.ts'],
   },
 })
