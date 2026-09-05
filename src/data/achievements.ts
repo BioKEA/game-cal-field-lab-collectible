@@ -1,3 +1,6 @@
+import type { PlayerRank } from '@/types/game';
+import { rankAtLeast } from '@/lib/progression';
+
 export interface AchievementDef {
   id: string;
   title: string;
@@ -8,7 +11,7 @@ export interface AchievementDef {
     totalIdentified: number;
     discoveredSpecies: number;
     expeditionsCompleted: number;
-    rank: string;
+    rank: PlayerRank;
     unlockedBiomes: number;
     legendaryFound: boolean;
     ultraRareFound: boolean;
@@ -77,14 +80,14 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     title: 'Promoted!',
     description: 'Reach Junior Explorer rank',
     emoji: '🎖️',
-    check: (s) => ['junior-explorer', 'field-researcher', 'lead-scientist', 'lab-director'].includes(s.rank),
+    check: (s) => rankAtLeast(s.rank, 'junior-explorer'),
   },
   {
     id: 'field-researcher',
     title: 'Field Veteran',
     description: 'Reach Field Researcher rank',
     emoji: '🏆',
-    check: (s) => ['field-researcher', 'lead-scientist', 'lab-director'].includes(s.rank),
+    check: (s) => rankAtLeast(s.rank, 'field-researcher'),
   },
   {
     id: 'three-biomes',
@@ -96,7 +99,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   {
     id: 'all-biomes',
     title: 'Marin Master',
-    description: 'Unlock all biomes',
+    description: 'Unlock 5 biomes',
     emoji: '🌍',
     check: (s) => s.unlockedBiomes >= 5,
   },

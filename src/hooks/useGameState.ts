@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
-import type { GameState, CollectedSpecimen, SamplingMethod, PlayerRank, DailyChallenge, FieldNote, Achievement } from '@/types/game';
+import type { GameState, CollectedSpecimen, SamplingMethod, DailyChallenge, FieldNote, Achievement } from '@/types/game';
 import { SPECIES } from '@/data/species';
 import { ACHIEVEMENTS } from '@/data/achievements';
 import { MISSIONS } from '@/data/missions';
@@ -11,7 +11,8 @@ import { getRegionFuelCost, getRegionById } from '@/data/regions';
 import { computeBuffs } from '@/lib/buffs';
 import { getHealthDamage, getBiomeHealth, computeVisitorCredits } from '@/lib/ecosystem';
 import { playCollect, playLabStage, playAchievement } from '@/lib/sounds';
-import { applyXpGain, getRarityXP, getRarityCredits } from '@/lib/progression';
+import { applyXpGain, getRarityXP, getRarityCredits, RANK_ORDER } from '@/lib/progression';
+import { RANK_LABELS } from '@/types/game';
 import { createInitialState, migrateLoadedState, appendNote } from '@/lib/save';
 
 const LEGACY_STORAGE_KEY = 'biokea-game-state';
@@ -249,11 +250,10 @@ export function useGameState(slot: number) {
   // Toast on rank up
   useEffect(() => {
     if (state.rank !== prevRank.current) {
-      const order: PlayerRank[] = ['volunteer', 'junior-explorer', 'field-researcher', 'lead-scientist', 'lab-director'];
-      if (order.indexOf(state.rank) > order.indexOf(prevRank.current)) {
+      if (RANK_ORDER.indexOf(state.rank) > RANK_ORDER.indexOf(prevRank.current)) {
         playAchievement();
         toast('⭐ Rank Promotion', {
-          description: `Promoted to ${state.rank.replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase())}`,
+          description: `Promoted to ${RANK_LABELS[state.rank]}`,
           duration: 5000,
         });
       }
