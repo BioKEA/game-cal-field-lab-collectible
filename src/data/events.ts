@@ -1,4 +1,15 @@
-import type { RegionId } from '@/types/game';
+import type { RegionId, Rarity, TaxonomicGroup } from '@/types/game';
+
+export type EventScope = { biomeId: string } | { regionId: RegionId } | { all: true };
+
+export interface EventBonus {
+  kind: 'spawn' | 'xp';
+  multiplier: number;
+  scope: EventScope;
+  taxa?: TaxonomicGroup[];
+  rarities?: Rarity[];
+  nightOnly?: boolean;
+}
 
 export interface SeasonalEvent {
   id: string;
@@ -10,6 +21,14 @@ export interface SeasonalEvent {
   regionId: RegionId;
   accent: string;
   bonusNote: string;
+  bonus: EventBonus;
+}
+
+const RARE_PLUS: Rarity[] = ['rare', 'ultra-rare', 'legendary'];
+
+/** "Featured biome" events: rare+ spawn weight ×1.25 in that biome. */
+function featured(biomeId: string): EventBonus {
+  return { kind: 'spawn', multiplier: 1.25, scope: { biomeId }, rarities: RARE_PLUS };
 }
 
 // ── Marin County events ───────────────────────────────────────────────
@@ -25,6 +44,7 @@ const MARIN_EVENTS: SeasonalEvent[] = [
     regionId: 'marin-county',
     accent: '#e89a3c',
     bonusNote: 'Extra XP for pollinator discoveries this week',
+    bonus: { kind: 'xp', multiplier: 1.5, scope: { regionId: 'marin-county' }, taxa: ['insects'] },
   },
   {
     id: 'redwood-bloom',
@@ -36,6 +56,7 @@ const MARIN_EVENTS: SeasonalEvent[] = [
     regionId: 'marin-county',
     accent: '#c9a84c',
     bonusNote: 'Featured biome: Muir Woods',
+    bonus: featured('muir-woods'),
   },
   {
     id: 'king-tide-survey',
@@ -47,6 +68,7 @@ const MARIN_EVENTS: SeasonalEvent[] = [
     regionId: 'marin-county',
     accent: '#60a5fa',
     bonusNote: 'Rare marine invertebrates more likely',
+    bonus: { kind: 'spawn', multiplier: 1.5, scope: { biomeId: 'stinson-beach' }, taxa: ['marine-invertebrates'], rarities: RARE_PLUS },
   },
   {
     id: 'herring-run',
@@ -58,6 +80,7 @@ const MARIN_EVENTS: SeasonalEvent[] = [
     regionId: 'marin-county',
     accent: '#7dd3c0',
     bonusNote: 'Featured biome: Tomales Bay',
+    bonus: featured('tomales-bay'),
   },
   {
     id: 'dawn-chorus',
@@ -69,6 +92,7 @@ const MARIN_EVENTS: SeasonalEvent[] = [
     regionId: 'marin-county',
     accent: '#f5b342',
     bonusNote: 'Featured biome: Point Reyes',
+    bonus: featured('point-reyes'),
   },
   {
     id: 'amphibian-census',
@@ -80,6 +104,7 @@ const MARIN_EVENTS: SeasonalEvent[] = [
     regionId: 'marin-county',
     accent: '#4a8a4a',
     bonusNote: 'Featured biome: Bolinas Lagoon',
+    bonus: featured('bolinas-lagoon'),
   },
 ];
 
@@ -96,6 +121,7 @@ const REDWOOD_EVENTS: SeasonalEvent[] = [
     regionId: 'redwood-coast',
     accent: '#e07050',
     bonusNote: 'Featured biome: Klamath River',
+    bonus: featured('klamath-river'),
   },
   {
     id: 'old-growth-census',
@@ -107,6 +133,7 @@ const REDWOOD_EVENTS: SeasonalEvent[] = [
     regionId: 'redwood-coast',
     accent: '#4a8a4a',
     bonusNote: 'Canopy species bonus at Humboldt Redwoods',
+    bonus: { kind: 'spawn', multiplier: 1.5, scope: { biomeId: 'humboldt-redwoods' }, taxa: ['birds', 'plants'] },
   },
   {
     id: 'lost-coast-bioblitz',
@@ -118,6 +145,7 @@ const REDWOOD_EVENTS: SeasonalEvent[] = [
     regionId: 'redwood-coast',
     accent: '#8ab8c8',
     bonusNote: 'All species XP doubled at Lost Coast',
+    bonus: { kind: 'xp', multiplier: 2, scope: { biomeId: 'lost-coast' } },
   },
   {
     id: 'coho-spawning',
@@ -129,6 +157,7 @@ const REDWOOD_EVENTS: SeasonalEvent[] = [
     regionId: 'redwood-coast',
     accent: '#60a5fa',
     bonusNote: 'Aquatic species bonus this week',
+    bonus: { kind: 'spawn', multiplier: 1.5, scope: { regionId: 'redwood-coast' }, taxa: ['amphibians', 'marine-invertebrates', 'microorganisms'] },
   },
 ];
 
@@ -145,6 +174,7 @@ const SIERRA_EVENTS: SeasonalEvent[] = [
     regionId: 'sierra-nevada',
     accent: '#c9a84c',
     bonusNote: 'Featured biome: Giant Sequoia Grove',
+    bonus: featured('giant-sequoia-grove'),
   },
   {
     id: 'alpine-wildflower-peak',
@@ -156,6 +186,7 @@ const SIERRA_EVENTS: SeasonalEvent[] = [
     regionId: 'sierra-nevada',
     accent: '#d89aca',
     bonusNote: 'Plant and insect species bonus at High Country',
+    bonus: { kind: 'spawn', multiplier: 1.5, scope: { biomeId: 'sierra-high-country' }, taxa: ['plants', 'insects'] },
   },
   {
     id: 'mono-lake-migration',
@@ -167,6 +198,7 @@ const SIERRA_EVENTS: SeasonalEvent[] = [
     regionId: 'sierra-nevada',
     accent: '#b8a878',
     bonusNote: 'Featured biome: Mono Lake',
+    bonus: featured('mono-lake'),
   },
   {
     id: 'yosemite-bear-survey',
@@ -178,6 +210,7 @@ const SIERRA_EVENTS: SeasonalEvent[] = [
     regionId: 'sierra-nevada',
     accent: '#8a6a4a',
     bonusNote: 'Mammal species bonus at Yosemite Valley',
+    bonus: { kind: 'spawn', multiplier: 1.5, scope: { biomeId: 'yosemite-valley' }, taxa: ['mammals'] },
   },
 ];
 
@@ -194,6 +227,7 @@ const MOJAVE_EVENTS: SeasonalEvent[] = [
     regionId: 'mojave-desert',
     accent: '#e8a0d0',
     bonusNote: 'All rarity rates boosted across Mojave',
+    bonus: { kind: 'spawn', multiplier: 1.3, scope: { regionId: 'mojave-desert' }, rarities: RARE_PLUS },
   },
   {
     id: 'pupfish-census',
@@ -205,6 +239,7 @@ const MOJAVE_EVENTS: SeasonalEvent[] = [
     regionId: 'mojave-desert',
     accent: '#60a5fa',
     bonusNote: 'Featured biome: Death Valley',
+    bonus: featured('death-valley'),
   },
   {
     id: 'tortoise-emergence',
@@ -216,6 +251,7 @@ const MOJAVE_EVENTS: SeasonalEvent[] = [
     regionId: 'mojave-desert',
     accent: '#d4a574',
     bonusNote: 'Reptile species bonus across Mojave',
+    bonus: { kind: 'spawn', multiplier: 1.5, scope: { regionId: 'mojave-desert' }, taxa: ['reptiles'] },
   },
   {
     id: 'nocturnal-survey',
@@ -227,6 +263,7 @@ const MOJAVE_EVENTS: SeasonalEvent[] = [
     regionId: 'mojave-desert',
     accent: '#4a5a8a',
     bonusNote: 'Night-active species spawn rates doubled',
+    bonus: { kind: 'spawn', multiplier: 2, scope: { regionId: 'mojave-desert' }, nightOnly: true },
   },
 ];
 
@@ -243,6 +280,7 @@ const CHANNEL_ISLANDS_EVENTS: SeasonalEvent[] = [
     regionId: 'channel-islands',
     accent: '#60a5fa',
     bonusNote: 'Marine species bonus at Anacapa',
+    bonus: { kind: 'spawn', multiplier: 1.5, scope: { biomeId: 'anacapa-kelp-forest' }, taxa: ['marine-invertebrates', 'mammals'] },
   },
   {
     id: 'island-fox-survey',
@@ -254,6 +292,7 @@ const CHANNEL_ISLANDS_EVENTS: SeasonalEvent[] = [
     regionId: 'channel-islands',
     accent: '#e89a3c',
     bonusNote: 'Featured biome: Santa Cruz Island',
+    bonus: featured('santa-cruz-island'),
   },
   {
     id: 'kelp-forest-dive',
@@ -265,6 +304,7 @@ const CHANNEL_ISLANDS_EVENTS: SeasonalEvent[] = [
     regionId: 'channel-islands',
     accent: '#3a9a7a',
     bonusNote: 'Marine invertebrate discovery rates boosted',
+    bonus: { kind: 'spawn', multiplier: 1.5, scope: { biomeId: 'anacapa-kelp-forest' }, taxa: ['marine-invertebrates'] },
   },
   {
     id: 'torrey-pine-count',
@@ -276,6 +316,7 @@ const CHANNEL_ISLANDS_EVENTS: SeasonalEvent[] = [
     regionId: 'channel-islands',
     accent: '#4a8a4a',
     bonusNote: 'Featured biome: Santa Rosa Island',
+    bonus: featured('santa-rosa-island'),
   },
 ];
 
@@ -290,7 +331,7 @@ const REGION_EVENTS: Record<RegionId, SeasonalEvent[]> = {
 };
 
 // All events in a flat list (for backward compat / global rotation)
-const ALL_EVENTS: SeasonalEvent[] = [
+export const ALL_EVENTS: SeasonalEvent[] = [
   ...MARIN_EVENTS,
   ...REDWOOD_EVENTS,
   ...SIERRA_EVENTS,
