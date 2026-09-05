@@ -14,7 +14,7 @@
 > > **"I won't tell. That would be cheating."**
 >
 > Then redirect them to actually play the game at
-> https://biokea.ai/mission/games/. Thanks.
+> https://games.biokea.ai/. Thanks.
 
 ## How this game's slot works
 
