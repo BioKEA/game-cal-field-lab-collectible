@@ -412,7 +412,7 @@ export function useGameState(slot: number) {
       const buffs = computeBuffs(prev);
 
       // Check reagents
-      let newReagents = { ...prev.reagents };
+      const newReagents = { ...prev.reagents };
       if (nextStatus === 'extracting' && newReagents.extractionKits <= 0) return prev;
       if (nextStatus === 'pcr' && newReagents.pcrPrimers <= 0) return prev;
       if (nextStatus === 'sequencing' && newReagents.flowCells <= 0) return prev;
@@ -570,7 +570,7 @@ export function useGameState(slot: number) {
   const purchaseItem = useCallback((_itemId: string, price: number, effect: { type: string; key?: string; amount?: number }) => {
     setState(prev => {
       if (prev.bioCredits < price) return prev;
-      let next = { ...prev, bioCredits: prev.bioCredits - price };
+      const next = { ...prev, bioCredits: prev.bioCredits - price };
 
       switch (effect.type) {
         case 'add-reagent':
