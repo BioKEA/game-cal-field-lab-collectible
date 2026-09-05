@@ -9,16 +9,16 @@ import { SPECIES } from '@/data/species';
 import { REGIONS, getRegionFuelCost } from '@/data/regions';
 import { SAMPLING_METHOD_INFO, RARITY_COLORS } from '@/types/game';
 import type { GameState, CollectionPoint, SamplingMethod, CollectedSpecimen, RegionId } from '@/types/game';
-import { getBiomeWeather, getTodayWeather, getWeatherModifier } from '@/data/weather';
+import { getBiomeWeather, getTodayWeather } from '@/data/weather';
 import { computeBuffs } from '@/lib/buffs';
 import {
   getBiomeHealth,
-  getHealthMultiplier,
   getHealthStatus,
   HEALTH_STATUS_INFO,
   hasKeystoneBonus,
-  KEYSTONE_BONUS,
 } from '@/lib/ecosystem';
+import { eligibleSpecies, computeSpawnWeights, pickWeighted } from '@/lib/spawn';
+import { getActiveEventForBiome, eventCoversBiome } from '@/lib/events';
 
 interface ExpeditionProps {
   state: GameState;
@@ -106,6 +106,8 @@ export default function Expedition({
 
   const weather = useMemo(() => selectedBiomeId ? getBiomeWeather(selectedBiomeId) : getTodayWeather(), [selectedBiomeId]);
   const buffs = useMemo(() => computeBuffs(state), [state]);
+  const activeEvent = useMemo(() => (selectedBiomeId ? getActiveEventForBiome(selectedBiomeId) : null), [selectedBiomeId]);
+  const eventBonusApplies = !!(activeEvent && selectedBiomeId && eventCoversBiome(activeEvent, selectedBiomeId));
   const collectCost = buffs.collectStaminaCost;
 
   const selectedBiome = selectedBiomeId ? getBiomeById(selectedBiomeId) : null;
@@ -140,51 +142,30 @@ export default function Expedition({
 
     setCollecting(true);
 
-    // Determine which species to find based on method + point + time of day
-    const availableSpecies = selectedPoint.speciesPool
-      .map(id => SPECIES.find(s => s.id === id)!)
-      .filter(s => s.samplingMethods.includes(selectedMethod!))
-      .filter(s => {
-        const activeAt = s.activeAt || 'day';
-        if (activeAt === 'both') return true;
-        return isNight ? activeAt === 'night' : activeAt === 'day';
-      });
+    const pool = selectedPoint.speciesPool
+      .map(id => SPECIES.find(s => s.id === id))
+      .filter((s): s is NonNullable<typeof s> => !!s);
+    const availableSpecies = eligibleSpecies(pool, selectedMethod, isNight);
 
     if (availableSpecies.length === 0) {
       setCollecting(false);
       return;
     }
 
-    // Base rarity weights, boosted by weather modifiers and skill buffs
-    const baseWeights: Record<string, number> = {
-      common: 60, uncommon: 25, rare: 10, 'ultra-rare': 4, legendary: 1,
-    };
-    const health = getBiomeHealth(state, selectedBiomeId);
-    const healthMult = getHealthMultiplier(health);
     const biome = getBiomeById(selectedBiomeId);
-    const keystone = biome ? hasKeystoneBonus(state, biome.signatureSpeciesId) : false;
-    const weightedSpecies = availableSpecies.map(s => {
-      const weatherMod = getWeatherModifier(weather, s.taxonomicGroup, s.rarity);
-      let weight = baseWeights[s.rarity] * weatherMod;
-      // Biology skill rare/legendary bonuses (additive on base rate)
-      if (s.rarity === 'rare') weight *= (1 + buffs.rareChanceBonus * 10);
-      if (s.rarity === 'legendary') weight *= (1 + buffs.legendaryChanceBonus * 10);
-      // Ecosystem health affects rare+ spawn rate
-      if (s.rarity === 'rare' || s.rarity === 'ultra-rare' || s.rarity === 'legendary') {
-        weight *= healthMult;
-        if (keystone) weight *= KEYSTONE_BONUS;
-      }
-      return { species: s, weight };
-    });
-    const totalWeight = weightedSpecies.reduce((sum, w) => sum + w.weight, 0);
-    let roll = Math.random() * totalWeight;
-    let chosen = weightedSpecies[0].species;
-    for (const { species, weight } of weightedSpecies) {
-      roll -= weight;
-      if (roll <= 0) {
-        chosen = species;
-        break;
-      }
+    const chosen = pickWeighted(
+      computeSpawnWeights(availableSpecies, {
+        biomeId: selectedBiomeId,
+        weather,
+        health: getBiomeHealth(state, selectedBiomeId),
+        keystone: biome ? hasKeystoneBonus(state, biome.signatureSpeciesId) : false,
+        buffs,
+        event: activeEvent,
+      }),
+    );
+    if (!chosen) {
+      setCollecting(false);
+      return;
     }
 
     setTimeout(() => {
@@ -198,7 +179,7 @@ export default function Expedition({
       setShowResult(true);
       setCollecting(false);
     }, 1500);
-  }, [selectedPoint, selectedMethod, selectedBiomeId, state.stamina, onCollectSpecimen, isNight, weather, buffs, collectCost]);
+  }, [selectedPoint, selectedMethod, selectedBiomeId, state, onCollectSpecimen, isNight, weather, buffs, collectCost, activeEvent]);
 
   // When launched with a specific target (from HQ map), jump straight to
   // the collecting phase at that point — but only once, on first mount.
@@ -299,6 +280,11 @@ export default function Expedition({
             <div className="text-xs truncate" style={{ color: isNight ? '#6a88aa' : weather.accent }}>
               {isNight ? 'Nocturnal species only · use a lantern' : `${weather.temp} · ${weather.humidity}`}
             </div>
+            {eventBonusApplies && activeEvent && (!isNight || activeEvent.bonus.nightOnly) && (
+              <div className="text-[11px] truncate" style={{ color: activeEvent.accent }}>
+                {activeEvent.icon} {activeEvent.bonusNote}
+              </div>
+            )}
           </div>
         </div>
         <div

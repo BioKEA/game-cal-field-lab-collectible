@@ -14,6 +14,7 @@ import { playCollect, playLabStage, playAchievement } from '@/lib/sounds';
 import { applyXpGain, getRarityXP, getRarityCredits, RANK_ORDER } from '@/lib/progression';
 import { RANK_LABELS } from '@/types/game';
 import { createInitialState, migrateLoadedState, appendNote } from '@/lib/save';
+import { getActiveEventForBiome, getEventXpMultiplier } from '@/lib/events';
 
 const LEGACY_STORAGE_KEY = 'biokea-game-state';
 const slotKey = (slot: number) => `biokea-game-state-slot-${slot}`;
@@ -419,7 +420,11 @@ export function useGameState(slot: number) {
       const biome = BIOMES.find(b => b.id === specimen.biomeId);
       const regionTier = biome ? (getRegionById(biome.regionId)?.tier ?? 1) : 1;
       const tierCreditMult = 1 + (regionTier - 1) * 0.5;
-      const xpGain = Math.round(baseXp * buffs.xpMultiplier * barcodeMult);
+      const activeEvent = getActiveEventForBiome(specimen.biomeId);
+      const eventXpMult = nextStatus === 'identified' && species
+        ? getEventXpMultiplier(activeEvent, species, specimen.biomeId)
+        : 1;
+      const xpGain = Math.round(baseXp * buffs.xpMultiplier * barcodeMult * eventXpMult);
       const creditGain = Math.round(baseCredits * buffs.creditMultiplier * barcodeMult * tierCreditMult);
 
       // Research points: 1 per new discovery, 2 for rare+, 3 for ultra-rare+, 5 for legendary
