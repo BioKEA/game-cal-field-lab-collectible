@@ -2,7 +2,7 @@ import { useMemo, useEffect, useRef, useState, useCallback } from 'react';
 import { MapContainer, TileLayer, Rectangle, Marker, Polyline, Popup, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { BIOMES } from '@/data/biomes';
+import { BIOMES, getBiomeSpeciesCount } from '@/data/biomes';
 import { SPECIES } from '@/data/species';
 import { REGIONS, isTierUnlocked, getRegionCatalogPct } from '@/data/regions';
 import type { GameState, RegionId } from '@/types/game';
@@ -401,7 +401,7 @@ export default function CaliforniaHero({
                     </div>
                     <div style={{ fontSize: 12, color: '#5a7a5a', marginBottom: 7 }}>
                       {isUnlocked
-                        ? `${discovered}/${biome.totalSpecies} species · ${biome.collectionPoints.length} sites`
+                        ? `${discovered}/${getBiomeSpeciesCount(biome.id)} species · ${biome.collectionPoints.length} sites`
                         : 'Locked — purchase permit'}
                     </div>
                     {isUnlocked && onSelectBiome && (

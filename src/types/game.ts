@@ -90,7 +90,6 @@ export interface Biome {
   collectionPoints: CollectionPoint[];
   signatureSpeciesId: string;
   unlocked: boolean;
-  totalSpecies: number;
   emoji: string;
 }
 

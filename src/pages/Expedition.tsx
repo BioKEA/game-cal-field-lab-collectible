@@ -401,7 +401,7 @@ export default function Expedition({
                           {biome.name}
                         </span>
                         <span className="text-[11px] shrink-0" style={{ color: '#8aaa7a' }}>
-                          {isUnlocked ? `${discovered}/${biome.totalSpecies}` : ''}
+                          {isUnlocked ? `${discovered}/${biomeSpecies.length}` : ''}
                         </span>
                         <span className="text-[10px] shrink-0" style={{ color: '#5a7a5a' }}>
                           {isUnlocked

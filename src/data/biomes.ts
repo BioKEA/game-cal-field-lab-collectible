@@ -1,4 +1,5 @@
 import type { Biome } from '@/types/game';
+import { SPECIES } from '@/data/species';
 
 export const BIOMES: Biome[] = [
   // ═══════════════════════════════════════════
@@ -16,7 +17,6 @@ export const BIOMES: Biome[] = [
     emoji: '🏖️',
     signatureSpeciesId: 'sunflower-sea-star',
     unlocked: true,
-    totalSpecies: 11,
     collectionPoints: [
       {
         id: 'stinson-shoreline',
@@ -25,7 +25,7 @@ export const BIOMES: Biome[] = [
         lat: 37.8975,
         lng: -122.6440,
         availableMethods: ['scoop', 'vial'],
-        speciesPool: ['pacific-mole-crab', 'california-poppy', 'surf-diatom'],
+        speciesPool: ['pacific-mole-crab', 'california-poppy'],
         environment: 'shore',
       },
       {
@@ -62,7 +62,6 @@ export const BIOMES: Biome[] = [
     emoji: '🌲',
     signatureSpeciesId: 'wandering-salamander',
     unlocked: true,
-    totalSpecies: 22,
     collectionPoints: [
       {
         id: 'muir-creek',
@@ -71,7 +70,7 @@ export const BIOMES: Biome[] = [
         lat: 37.8965,
         lng: -122.5795,
         availableMethods: ['vial', 'plankton-net', 'hand-net'],
-        speciesPool: ['california-newt', 'pacific-tree-frog', 'surf-diatom', 'western-toad-night'],
+        speciesPool: ['california-newt', 'pacific-tree-frog', 'western-toad-night'],
         environment: 'stream',
       },
       {
@@ -118,7 +117,6 @@ export const BIOMES: Biome[] = [
     emoji: '🦅',
     signatureSpeciesId: 'tule-elk',
     unlocked: false,
-    totalSpecies: 13,
     collectionPoints: [
       {
         id: 'reyes-lighthouse',
@@ -146,8 +144,8 @@ export const BIOMES: Biome[] = [
         description: 'Open grasslands where tule elk herds graze. Raptors hunt above and burrowing owls nest below.',
         lat: 38.1830,
         lng: -122.9650,
-        availableMethods: ['hand-net', 'scoop', 'car-trap'],
-        speciesPool: ['tule-elk', 'california-quail', 'burrowing-owl', 'california-poppy', 'barn-owl', 'ringtail-cat', 'western-toad-night'],
+        availableMethods: ['hand-net', 'scoop', 'car-trap', 'vial'],
+        speciesPool: ['tule-elk', 'california-quail', 'burrowing-owl', 'california-poppy', 'barn-owl', 'ringtail-cat', 'western-toad-night', 'little-brown-bat'],
         environment: 'meadow',
       },
     ],
@@ -164,7 +162,6 @@ export const BIOMES: Biome[] = [
     emoji: '🦭',
     signatureSpeciesId: 'great-blue-heron',
     unlocked: false,
-    totalSpecies: 12,
     collectionPoints: [
       {
         id: 'bolinas-mudflats',
@@ -213,7 +210,6 @@ export const BIOMES: Biome[] = [
     emoji: '🌊',
     signatureSpeciesId: 'california-red-legged-frog',
     unlocked: false,
-    totalSpecies: 11,
     collectionPoints: [
       {
         id: 'tomales-oyster-beds',
@@ -231,7 +227,7 @@ export const BIOMES: Biome[] = [
         description: 'A sandy spit where harbor seals rest between foraging trips. Shorebirds probe the wrack line and kelp washes ashore.',
         lat: 38.1680,
         lng: -122.9010,
-        availableMethods: ['vial', 'hand-net'],
+        availableMethods: ['vial', 'hand-net', 'plankton-net'],
         speciesPool: ['snowy-plover', 'brown-pelican', 'great-egret', 'gumboot-chiton', 'bull-kelp', 'glowing-bioluminescent-plankton'],
         environment: 'shore',
       },
@@ -263,7 +259,6 @@ export const BIOMES: Biome[] = [
     emoji: '🌲',
     signatureSpeciesId: 'humboldt-old-growth-redwood',
     unlocked: false,
-    totalSpecies: 10,
     collectionPoints: [
       {
         id: 'rockefeller-grove',
@@ -309,7 +304,6 @@ export const BIOMES: Biome[] = [
     emoji: '🏖️',
     signatureSpeciesId: 'roosevelt-elk',
     unlocked: false,
-    totalSpecies: 10,
     collectionPoints: [
       {
         id: 'black-sand-beach',
@@ -327,7 +321,7 @@ export const BIOMES: Biome[] = [
         description: 'High cliff-top meadows overlooking the Pacific. Sea birds wheel below, elk graze above.',
         lat: 39.9750,
         lng: -123.9600,
-        availableMethods: ['hand-net', 'vial'],
+        availableMethods: ['hand-net', 'vial', 'scoop'],
         speciesPool: ['black-oystercatcher', 'pigeon-guillemot', 'tufted-puffin', 'mountain-beaver'],
         environment: 'dunes',
       },
@@ -355,7 +349,6 @@ export const BIOMES: Biome[] = [
     emoji: '🐟',
     signatureSpeciesId: 'chinook-salmon',
     unlocked: false,
-    totalSpecies: 8,
     collectionPoints: [
       {
         id: 'klamath-mouth',
@@ -405,7 +398,6 @@ export const BIOMES: Biome[] = [
     emoji: '🏔️',
     signatureSpeciesId: 'black-bear',
     unlocked: false,
-    totalSpecies: 9,
     collectionPoints: [
       {
         id: 'merced-river-pools',
@@ -451,7 +443,6 @@ export const BIOMES: Biome[] = [
     emoji: '⛰️',
     signatureSpeciesId: 'american-pika',
     unlocked: false,
-    totalSpecies: 9,
     collectionPoints: [
       {
         id: 'mount-dana-talus',
@@ -497,7 +488,6 @@ export const BIOMES: Biome[] = [
     emoji: '🌳',
     signatureSpeciesId: 'giant-sequoia',
     unlocked: false,
-    totalSpecies: 8,
     collectionPoints: [
       {
         id: 'general-sherman-grove',
@@ -543,7 +533,6 @@ export const BIOMES: Biome[] = [
     emoji: '🧪',
     signatureSpeciesId: 'mono-brine-shrimp',
     unlocked: false,
-    totalSpecies: 9,
     collectionPoints: [
       {
         id: 'south-tufa-towers',
@@ -593,7 +582,6 @@ export const BIOMES: Biome[] = [
     emoji: '🌵',
     signatureSpeciesId: 'joshua-tree',
     unlocked: false,
-    totalSpecies: 10,
     collectionPoints: [
       {
         id: 'hidden-valley-yucca',
@@ -639,7 +627,6 @@ export const BIOMES: Biome[] = [
     emoji: '🏜️',
     signatureSpeciesId: 'death-valley-pupfish',
     unlocked: false,
-    totalSpecies: 8,
     collectionPoints: [
       {
         id: 'badwater-salt-pan',
@@ -685,7 +672,6 @@ export const BIOMES: Biome[] = [
     emoji: '🦎',
     signatureSpeciesId: 'gila-monster',
     unlocked: false,
-    totalSpecies: 8,
     collectionPoints: [
       {
         id: 'kelso-dunes',
@@ -694,7 +680,7 @@ export const BIOMES: Biome[] = [
         lat: 34.8937,
         lng: -115.7340,
         availableMethods: ['scoop', 'hand-net'],
-        speciesPool: ['mojave-fringe-toed-lizard', 'harris-hawk', 'desert-kit-fox', 'mojave-aster', 'antelope-squirrel'],
+        speciesPool: ['mojave-fringe-toed-lizard', 'harris-hawk', 'desert-kit-fox', 'mojave-aster', 'antelope-squirrel', 'great-basin-kangaroo-rat', 'creosote-bush'],
         environment: 'dunes',
       },
       {
@@ -713,7 +699,7 @@ export const BIOMES: Biome[] = [
         description: 'A rare permanent desert spring supporting a ribbon of green in an otherwise stark landscape.',
         lat: 35.1100,
         lng: -115.1300,
-        availableMethods: ['vial', 'plankton-net'],
+        availableMethods: ['vial', 'plankton-net', 'hand-net'],
         speciesPool: ['red-spotted-toad', 'vermilion-flycatcher', 'red-tailed-hawk', 'sidewinder-rattlesnake'],
         environment: 'stream',
       },
@@ -735,7 +721,6 @@ export const BIOMES: Biome[] = [
     emoji: '🦊',
     signatureSpeciesId: 'island-fox',
     unlocked: false,
-    totalSpecies: 9,
     collectionPoints: [
       {
         id: 'scorpion-canyon',
@@ -781,7 +766,6 @@ export const BIOMES: Biome[] = [
     emoji: '🐠',
     signatureSpeciesId: 'garibaldi',
     unlocked: false,
-    totalSpecies: 8,
     collectionPoints: [
       {
         id: 'landing-cove-kelp',
@@ -827,7 +811,6 @@ export const BIOMES: Biome[] = [
     emoji: '🌾',
     signatureSpeciesId: 'torrey-pine',
     unlocked: false,
-    totalSpecies: 7,
     collectionPoints: [
       {
         id: 'lobo-canyon-riparian',
@@ -845,7 +828,7 @@ export const BIOMES: Biome[] = [
         description: 'The only wild stand of Santa Rosa Island Torrey Pine — fewer than 200 trees, clinging to a windswept ridge.',
         lat: 34.0000,
         lng: -120.0200,
-        availableMethods: ['vial', 'scoop'],
+        availableMethods: ['vial', 'scoop', 'hand-net'],
         speciesPool: ['torrey-pine', 'ashy-storm-petrel', 'island-spotted-skunk', 'island-oak'],
         environment: 'forest',
       },
@@ -865,4 +848,9 @@ export const BIOMES: Biome[] = [
 
 export function getBiomeById(id: string): Biome | undefined {
   return BIOMES.find(b => b.id === id);
+}
+
+/** Number of species whose biomeIds include this biome. */
+export function getBiomeSpeciesCount(biomeId: string): number {
+  return SPECIES.filter(s => s.biomeIds.includes(biomeId)).length;
 }

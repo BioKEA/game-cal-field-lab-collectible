@@ -1,5 +1,5 @@
 import { SPECIES } from '@/data/species';
-import { BIOMES } from '@/data/biomes';
+import { BIOMES, getBiomeSpeciesCount } from '@/data/biomes';
 import { RARITY_COLORS, RARITY_LABELS, type Rarity, type TaxonomicGroup } from '@/types/game';
 import type { GameState } from '@/types/game';
 
@@ -70,7 +70,7 @@ export default function Stats({ state, onNavigate }: StatsProps) {
     const discovered = state.discoveredSpecies.filter(
       sid => SPECIES.find(s => s.id === sid)?.biomeIds.includes(b.id)
     ).length;
-    return { ...b, discovered };
+    return { ...b, discovered, totalSpecies: getBiomeSpeciesCount(b.id) };
   });
 
   // Sampling method breakdown (from specimens collected)

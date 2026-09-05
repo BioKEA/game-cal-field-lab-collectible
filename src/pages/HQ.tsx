@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { RANK_LABELS, RANK_THRESHOLDS, DAILY_XP_GOAL, type PlayerRank } from '@/types/game';
 import { SPECIES } from '@/data/species';
-import { BIOMES } from '@/data/biomes';
+import { BIOMES, getBiomeSpeciesCount } from '@/data/biomes';
 import type { GameState, RegionId } from '@/types/game';
 import DailyChallenges from '@/components/DailyChallenges';
 import CaliforniaHero from '@/components/CaliforniaHero';
@@ -587,7 +587,8 @@ export default function HQ({ state, onNavigate, onClaimChallenge, onClaimMilesto
                     const discovered = state.discoveredSpecies.filter(
                       sid => SPECIES.find(s => s.id === sid)?.biomeIds.includes(biome.id),
                     ).length;
-                    const biomePct = biome.totalSpecies > 0 ? discovered / biome.totalSpecies : 0;
+                    const total = getBiomeSpeciesCount(biome.id);
+                    const biomePct = total > 0 ? discovered / total : 0;
                     const isUnlocked = state.unlockedBiomes.includes(biome.id) || biome.unlocked;
                     return (
                       <div
@@ -602,7 +603,7 @@ export default function HQ({ state, onNavigate, onClaimChallenge, onClaimMilesto
                           {biome.name}
                         </span>
                         <span className="text-[11px] tabular-nums font-semibold" style={{ color: '#5a7a5a' }}>
-                          {discovered}/{biome.totalSpecies}
+                          {discovered}/{total}
                         </span>
                         <div className="w-12 h-1.5 rounded-full" style={{ background: '#14231a' }}>
                           <div
