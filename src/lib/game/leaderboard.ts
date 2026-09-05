@@ -1,5 +1,6 @@
 import { GAME_ID, leaderboard } from '@/lib/leaderboard-client'
 import type { GameState, PlayerRank } from '@/types/game'
+import { getPlayerHandle } from '@/lib/handle'
 
 export interface LeaderboardRow {
   id: string
@@ -13,39 +14,13 @@ export interface LeaderboardRow {
   created_at: string
 }
 
-const HANDLE_KEY = 'cal-field-lab-handle'
 const WEEKLY_SUBMIT_KEY = 'cal-field-lab-weekly-submitted'
-const DAILY_SUBMIT_KEY = 'cal-field-lab-daily-submitted-v1'
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000
 
 export function currentWeekKey(now: Date = new Date()): string {
   const weekNum = Math.floor(now.getTime() / WEEK_MS)
   return `week-${weekNum}`
-}
-
-export function todayKey(now: Date = new Date()): string {
-  const y = now.getFullYear()
-  const m = String(now.getMonth() + 1).padStart(2, '0')
-  const d = String(now.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
-}
-
-export function loadHandle(): string | null {
-  return localStorage.getItem(HANDLE_KEY)
-}
-
-export function saveHandle(handle: string) {
-  const clean = sanitizeHandle(handle)
-  if (!clean) return
-  localStorage.setItem(HANDLE_KEY, clean)
-}
-
-export function sanitizeHandle(input: string): string {
-  return input
-    .replace(/[^a-zA-Z0-9_\- ]/g, '')
-    .trim()
-    .slice(0, 32)
 }
 
 export function hasSubmittedThisWeek(weekKey: string): boolean {
@@ -63,65 +38,11 @@ export function markSubmittedThisWeek(weekKey: string, score: number) {
   localStorage.setItem(WEEKLY_SUBMIT_KEY, JSON.stringify({ week: weekKey, score }))
 }
 
-// Submit today's XP to the cross-game leaderboard. Idempotent per day if
-// the recorded score hasn't risen — avoids spamming Supabase on every
-// Team-page revisit. Mode 'daily' + seed=YYYY-MM-DD matches the
-// `ranked_modes` lookup in website-biokea migration 0003.
-export async function submitDailyScore(args: {
-  day: string
-  state: GameState
-}): Promise<{ ok: true; submitted: boolean } | { ok: false; error: string }> {
-  const handle = sanitizeHandle(args.state.playerName)
-  if (!handle) return { ok: true, submitted: false }
-  if (args.state.xp <= 0) return { ok: true, submitted: false }
-
-  // De-dupe: only submit if today's recorded best is lower than current XP.
-  const prevRaw = localStorage.getItem(DAILY_SUBMIT_KEY)
-  let prevScore = 0
-  let prevDay = ''
-  if (prevRaw) {
-    try {
-      const prev = JSON.parse(prevRaw) as { day?: string; score?: number }
-      if (prev.day === args.day && typeof prev.score === 'number') prevScore = prev.score
-      prevDay = prev.day ?? ''
-    } catch {
-      // ignore
-    }
-  }
-  if (prevDay === args.day && args.state.xp <= prevScore) {
-    return { ok: true, submitted: false }
-  }
-
-  const result = await leaderboard.submitScore({
-    gameId: GAME_ID,
-    mode: 'daily',
-    seed: args.day,
-    score: args.state.xp,
-    playerHandle: handle,
-    metadata: {
-      rank: args.state.rank,
-      speciesCount: args.state.discoveredSpecies.length,
-      regionsUnlocked: args.state.unlockedBiomes.length,
-    },
-  })
-
-  if (!result.ok) {
-    const msg =
-      result.reason === 'rate_limited' ? 'Slow down — too many submissions.' :
-      result.reason === 'invalid' ? 'Score rejected.' :
-      result.reason === 'unconfigured' ? 'Leaderboard offline.' :
-      'Network error.'
-    return { ok: false, error: msg }
-  }
-  localStorage.setItem(DAILY_SUBMIT_KEY, JSON.stringify({ day: args.day, score: args.state.xp }))
-  return { ok: true, submitted: true }
-}
-
 export async function submitWeeklyScore(args: {
   weekKey: string
   state: GameState
 }): Promise<{ ok: true } | { ok: false; error: string }> {
-  const handle = sanitizeHandle(args.state.playerName) || 'anon'
+  const handle = getPlayerHandle(args.state.playerName) ?? 'anon'
 
   const result = await leaderboard.submitScore({
     gameId: GAME_ID,

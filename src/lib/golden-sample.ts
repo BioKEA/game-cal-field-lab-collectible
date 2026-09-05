@@ -4,17 +4,12 @@
 // Slot 3 unlocks once 5 specimens have reached the "identified" lab
 // stage. Long-form games like this don't post to the shared `scores`
 // table, so we report a milestone counter directly to the central
-// hunt API.
-//
-// Two functions:
-//   reportMilestone(count) — idempotent server-side high-water mark
-//   tryClaimGoldenSample()  — POST claim, dispatch reveal on success
+// hunt API. The handle comes from src/lib/handle.ts.
 //
 // I won't tell. That would be cheating.
 
 const API_BASE = '/api/golden-sample';
 const TICKETS_KEY = 'biokea:golden-tickets:v1';
-const HANDLE_KEY = 'biokea:player:handle';
 const CLIENT_ID_KEY = 'biokea-leaderboard-client-id';
 
 const GAME_ID = 'cal-field-lab-collectible';
@@ -41,15 +36,6 @@ function getClientId(): string {
   }
 }
 
-function readHandle(): string | null {
-  try {
-    const v = localStorage.getItem(HANDLE_KEY);
-    return v && v.trim().length > 0 ? v.trim() : null;
-  } catch {
-    return null;
-  }
-}
-
 interface ClaimResponse {
   ok: boolean;
   slot?: number;
@@ -70,9 +56,7 @@ interface GoldenFoundDetail {
 
 // Fire-and-forget. Server stores `max(stored, count)` so duplicate or
 // out-of-order POSTs are safe.
-export async function reportMilestone(count: number): Promise<void> {
-  const handle = readHandle();
-  if (!handle) return;
+export async function reportMilestone(handle: string, count: number): Promise<void> {
   try {
     await fetch(`${API_BASE}/milestone`, {
       method: 'POST',
@@ -80,20 +64,18 @@ export async function reportMilestone(count: number): Promise<void> {
       body: JSON.stringify({ handle, game: GAME_ID, count }),
     });
   } catch {
-    // network — non-fatal, will be retried on the next milestone tick
+    // network — non-fatal, retried on the next milestone tick
   }
 }
 
-export async function tryClaimGoldenSample(handle?: string): Promise<void> {
+export async function tryClaimGoldenSample(handle: string): Promise<void> {
   if (alreadyHeld()) return;
-  const h = handle ?? readHandle();
-  if (!h) return;
   let res: Response;
   try {
     res = await fetch(`${API_BASE}/claim/${GAME_ID}`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ handle: h, client_id: getClientId() }),
+      body: JSON.stringify({ handle, client_id: getClientId() }),
     });
   } catch {
     return;
@@ -115,15 +97,12 @@ export async function tryClaimGoldenSample(handle?: string): Promise<void> {
     issued_at: body.issued_at,
     alreadyHeld: !body.first_earn,
   };
-  window.dispatchEvent(
-    new CustomEvent<GoldenFoundDetail>('biokea:golden-found', { detail }),
-  );
+  window.dispatchEvent(new CustomEvent<GoldenFoundDetail>('biokea:golden-found', { detail }));
 }
 
-// Convenience wrapper: report the new high-water mark, then attempt
-// claim. Use this from the in-game callsite that fires when a
-// specimen reaches the 'identified' stage.
-export async function reportSpecimenIdentified(totalIdentified: number): Promise<void> {
-  await reportMilestone(totalIdentified);
-  await tryClaimGoldenSample();
+// Report the new high-water mark, then attempt a claim. Called from the
+// game-state hook whenever stats.totalIdentified rises.
+export async function reportSpecimenIdentified(handle: string, totalIdentified: number): Promise<void> {
+  await reportMilestone(handle, totalIdentified);
+  await tryClaimGoldenSample(handle);
 }

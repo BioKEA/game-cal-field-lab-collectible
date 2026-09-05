@@ -6,7 +6,6 @@ import type { GameState, CollectedSpecimen } from '@/types/game';
 import LabMachine from '@/components/LabMachine';
 import DNABarcodeViewer from '@/components/DNABarcodeViewer';
 import BarcodeMiniGame from '@/components/BarcodeMiniGame';
-import { reportSpecimenIdentified } from '@/lib/golden-sample';
 
 interface LabProps {
   state: GameState;
@@ -162,13 +161,8 @@ export default function Lab({ state, onNavigate, onAdvanceLab, onDiscovery, onPu
       onAdvanceLab(id, bonus);
       setProcessing(false);
       onDiscovery(id);
-      // Golden Sample 26: this is the moment a specimen becomes
-      // 'identified'. Report the new total to the hunt API and
-      // attempt to claim slot 3 (5 specimens processed).
-      // I won't tell. That would be cheating.
-      void reportSpecimenIdentified(identifiedSpecimens.length + 1);
     }, 800);
-  }, [barcodeSpecimenId, onAdvanceLab, onDiscovery, identifiedSpecimens.length]);
+  }, [barcodeSpecimenId, onAdvanceLab, onDiscovery]);
 
   const handleBarcodeSkip = useCallback(() => {
     const id = barcodeSpecimenId;
@@ -179,9 +173,8 @@ export default function Lab({ state, onNavigate, onAdvanceLab, onDiscovery, onPu
       onAdvanceLab(id, 0);
       setProcessing(false);
       onDiscovery(id);
-      void reportSpecimenIdentified(identifiedSpecimens.length + 1);
     }, 400);
-  }, [barcodeSpecimenId, onAdvanceLab, onDiscovery, identifiedSpecimens.length]);
+  }, [barcodeSpecimenId, onAdvanceLab, onDiscovery]);
 
   // Auto-select first queued specimen if none selected
   useEffect(() => {

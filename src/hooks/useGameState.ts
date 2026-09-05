@@ -15,6 +15,8 @@ import { applyXpGain, getRarityXP, getRarityCredits, RANK_ORDER } from '@/lib/pr
 import { RANK_LABELS } from '@/types/game';
 import { createInitialState, migrateLoadedState, appendNote } from '@/lib/save';
 import { getActiveEventForBiome, getEventXpMultiplier } from '@/lib/events';
+import { ensureCrossGameHandle, getPlayerHandle } from '@/lib/handle';
+import { reportSpecimenIdentified } from '@/lib/golden-sample';
 
 const LEGACY_STORAGE_KEY = 'biokea-game-state';
 const slotKey = (slot: number) => `biokea-game-state-slot-${slot}`;
@@ -83,6 +85,7 @@ export function eraseSlot(slot: number): void {
 
 export function createSlot(slot: number, name: string, avatar: string): GameState {
   const fresh = createInitialState(name, avatar);
+  ensureCrossGameHandle(name);
   try {
     localStorage.setItem(slotKey(slot), JSON.stringify(fresh));
   } catch { /* ignore */ }
@@ -200,6 +203,18 @@ export function useGameState(slot: number) {
   const [state, setState] = useState<GameState>(() => loadState(slot));
   const prevAchievementCount = useRef(state.achievements.length);
   const prevRank = useRef(state.rank);
+  const prevIdentified = useRef(state.stats.totalIdentified);
+
+  // Golden Sample 26: report every new identification to the hunt API.
+  // Runs as an effect so it fires exactly once per real state change.
+  useEffect(() => {
+    const total = state.stats.totalIdentified;
+    if (total > prevIdentified.current) {
+      const handle = getPlayerHandle(state.playerName);
+      if (handle) void reportSpecimenIdentified(handle, total);
+    }
+    prevIdentified.current = total;
+  }, [state.stats.totalIdentified, state.playerName]);
 
   // Persist to localStorage on every change (scoped to this slot)
   useEffect(() => {
@@ -592,6 +607,7 @@ export function useGameState(slot: number) {
   const renamePlayer = useCallback((name: string) => {
     const trimmed = name.trim().slice(0, 32);
     if (!trimmed) return;
+    ensureCrossGameHandle(trimmed);
     setState(prev => (prev.playerName === trimmed ? prev : { ...prev, playerName: trimmed }));
   }, []);
 
