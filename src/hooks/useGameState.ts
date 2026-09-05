@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import type { GameState, CollectedSpecimen, SamplingMethod, PlayerRank, DailyChallenge, FieldNote, Achievement } from '@/types/game';
-import { RANK_THRESHOLDS, DAILY_XP_GOAL } from '@/types/game';
 import { SPECIES } from '@/data/species';
 import { ACHIEVEMENTS } from '@/data/achievements';
 import { MISSIONS } from '@/data/missions';
@@ -12,23 +11,13 @@ import { getRegionFuelCost, getRegionById } from '@/data/regions';
 import { computeBuffs } from '@/lib/buffs';
 import { getHealthDamage, getBiomeHealth, computeVisitorCredits } from '@/lib/ecosystem';
 import { playCollect, playLabStage, playAchievement } from '@/lib/sounds';
+import { applyXpGain, getRarityXP, getRarityCredits, getTodayYmd } from '@/lib/progression';
 
 const LEGACY_STORAGE_KEY = 'biokea-game-state';
 const slotKey = (slot: number) => `biokea-game-state-slot-${slot}`;
 
 export const ACTIVE_SLOT_KEY = 'biokea-active-slot';
 export const SLOT_COUNT = 3;
-
-function getTodayYmd(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-function getYmdNDaysAgo(n: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
 
 function createInitialState(name = 'Researcher', avatar = '🧑‍🔬'): GameState {
   return {
@@ -183,50 +172,6 @@ function migrateLoadedState(parsed: Partial<GameState> & Record<string, unknown>
   return p as GameState;
 }
 
-// Apply an XP gain: rolls daily counter, tracks history, advances streak if
-// the daily XP goal is crossed for the first time today.
-function applyXpGain(
-  prev: GameState,
-  amount: number,
-): Pick<GameState, 'xp' | 'rank' | 'dailyXpEarned' | 'dailyXpDate' | 'dailyStreak' | 'streakDate' | 'xpHistory'> {
-  const today = getTodayYmd();
-  const gain = Math.max(0, amount);
-  const prevDaily = prev.dailyXpDate === today ? prev.dailyXpEarned : 0;
-  const newDaily = prevDaily + gain;
-
-  // Rolling 30-day XP history
-  const history: Record<string, number> = { ...(prev.xpHistory || {}) };
-  history[today] = (history[today] || 0) + gain;
-  const cutoff = getYmdNDaysAgo(30);
-  for (const k of Object.keys(history)) {
-    if (k < cutoff) delete history[k];
-  }
-
-  // Streak: increment only on the first crossing of the goal today
-  const crossedGoal = prevDaily < DAILY_XP_GOAL && newDaily >= DAILY_XP_GOAL;
-  let streak = prev.dailyStreak || 0;
-  let streakDate = prev.streakDate || '';
-  if (crossedGoal && streakDate !== today) {
-    if (streakDate === getYmdNDaysAgo(1)) {
-      streak += 1;
-    } else {
-      streak = 1;
-    }
-    streakDate = today;
-  }
-
-  const newXp = prev.xp + amount;
-  return {
-    xp: newXp,
-    rank: calculateRank(newXp),
-    dailyXpEarned: newDaily,
-    dailyXpDate: today,
-    dailyStreak: streak,
-    streakDate,
-    xpHistory: history,
-  };
-}
-
 export function peekSlot(slot: number): GameState | null {
   try {
     const saved = localStorage.getItem(slotKey(slot));
@@ -356,36 +301,6 @@ function checkAchievements(state: GameState): Achievement[] {
     }
   }
   return newAchievements;
-}
-
-function calculateRank(xp: number): PlayerRank {
-  const ranks: PlayerRank[] = ['legendary-naturalist', 'distinguished-fellow', 'chief-scientist', 'lab-director', 'lead-scientist', 'field-researcher', 'junior-explorer', 'volunteer'];
-  for (const rank of ranks) {
-    if (xp >= (RANK_THRESHOLDS as Record<string, number>)[rank]) {
-      return rank;
-    }
-  }
-  return 'volunteer';
-}
-
-function getRarityXP(rarity: string): number {
-  switch (rarity) {
-    case 'legendary': return 100;
-    case 'ultra-rare': return 50;
-    case 'rare': return 25;
-    case 'uncommon': return 15;
-    default: return 10;
-  }
-}
-
-function getRarityCredits(rarity: string): number {
-  switch (rarity) {
-    case 'legendary': return 200;
-    case 'ultra-rare': return 100;
-    case 'rare': return 50;
-    case 'uncommon': return 40;
-    default: return 20;
-  }
 }
 
 export function useGameState(slot: number) {
