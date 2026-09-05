@@ -11,81 +11,14 @@ import { getRegionFuelCost, getRegionById } from '@/data/regions';
 import { computeBuffs } from '@/lib/buffs';
 import { getHealthDamage, getBiomeHealth, computeVisitorCredits } from '@/lib/ecosystem';
 import { playCollect, playLabStage, playAchievement } from '@/lib/sounds';
-import { applyXpGain, getRarityXP, getRarityCredits, getTodayYmd } from '@/lib/progression';
+import { applyXpGain, getRarityXP, getRarityCredits } from '@/lib/progression';
+import { createInitialState, migrateLoadedState, appendNote } from '@/lib/save';
 
 const LEGACY_STORAGE_KEY = 'biokea-game-state';
 const slotKey = (slot: number) => `biokea-game-state-slot-${slot}`;
 
 export const ACTIVE_SLOT_KEY = 'biokea-active-slot';
 export const SLOT_COUNT = 3;
-
-function createInitialState(name = 'Researcher', avatar = '🧑‍🔬'): GameState {
-  return {
-    playerName: name,
-    avatar,
-    createdAt: new Date().toISOString(),
-    rank: 'volunteer',
-    xp: 0,
-    dailyXpEarned: 0,
-    dailyXpDate: getTodayYmd(),
-    dailyStreak: 0,
-    streakDate: '',
-    xpHistory: {},
-    bioCredits: 50,
-    stamina: 100,
-    maxStamina: 100,
-    expeditionFuel: 5,
-    maxExpeditionFuel: 5,
-    lastStaminaRegen: new Date().toISOString(),
-    discoveredSpecies: [],
-    specimens: [],
-    currentBiomeId: null,
-    currentPointId: null,
-    unlockedBiomes: ['stinson-beach', 'muir-woods'],
-    labQueue: [],
-    reagents: {
-      extractionKits: 10,
-      pcrPrimers: 10,
-      flowCells: 5,
-    },
-    stats: {
-      totalCollected: 0,
-      totalIdentified: 0,
-      expeditionsCompleted: 0,
-      daysPlayed: 1,
-    },
-    fieldNotes: [],
-    dailyChallenges: [],
-    lastChallengeDate: '',
-    achievements: [],
-    claimedMissions: [],
-    claimedRequests: [],
-    researchPoints: 0,
-    unlockedSkills: [],
-    impactFactor: 0,
-    publicationCount: 0,
-    biomeHealth: Object.fromEntries(BIOMES.map(b => [b.id, 100])),
-    lastHealthRegen: new Date().toISOString(),
-    exhibits: Object.fromEntries(BIOMES.map(b => [b.id, [null, null, null]])),
-    lastMuseumCollect: new Date().toISOString(),
-    claimedMilestones: [],
-    totalPlaytimeSec: 0,
-  };
-}
-
-const ALL_BIOME_IDS = [
-  'stinson-beach', 'muir-woods', 'point-reyes', 'bolinas-lagoon', 'tomales-bay',
-  'humboldt-redwoods', 'lost-coast', 'klamath-river',
-  'yosemite-valley', 'sierra-high-country', 'giant-sequoia-grove', 'mono-lake',
-  'joshua-tree', 'death-valley', 'mojave-preserve',
-  'santa-cruz-island', 'anacapa-kelp-forest', 'santa-rosa-island',
-];
-
-const ALL_SKILL_IDS = [
-  'field-1', 'field-2', 'field-3', 'field-4',
-  'lab-1', 'lab-2', 'lab-3', 'lab-4',
-  'biology-1', 'biology-2', 'biology-3', 'biology-4',
-];
 
 function createDevState(): GameState {
   return {
@@ -99,8 +32,8 @@ function createDevState(): GameState {
     expeditionFuel: 999,
     maxExpeditionFuel: 999,
     researchPoints: 999,
-    unlockedBiomes: ALL_BIOME_IDS,
-    unlockedSkills: ALL_SKILL_IDS,
+    unlockedBiomes: BIOMES.map(b => b.id),
+    unlockedSkills: SKILLS.map(s => s.id),
     reagents: {
       extractionKits: 9999,
       pcrPrimers: 9999,
@@ -128,48 +61,6 @@ function clampDevResources(s: GameState): GameState {
       flowCells: Math.max(s.reagents.flowCells, 9999),
     },
   };
-}
-
-function migrateLoadedState(parsed: Partial<GameState> & Record<string, unknown>): GameState {
-  // Migrate old saves missing new fields
-  const p = parsed as Record<string, unknown> & Partial<GameState>;
-  if (!p.avatar) p.avatar = '🧑‍🔬';
-  if (!p.createdAt) p.createdAt = new Date().toISOString();
-  if (!p.fieldNotes) p.fieldNotes = [];
-  if (!p.dailyChallenges) p.dailyChallenges = [];
-  if (!p.lastChallengeDate) p.lastChallengeDate = '';
-  if (!p.achievements) p.achievements = [];
-  if (!p.claimedMissions) p.claimedMissions = [];
-  if (!p.claimedRequests) p.claimedRequests = [];
-  if (typeof p.researchPoints !== 'number') p.researchPoints = 0;
-  if (!p.unlockedSkills) p.unlockedSkills = [];
-  if (typeof p.impactFactor !== 'number') p.impactFactor = 0;
-  if (typeof p.publicationCount !== 'number') p.publicationCount = 0;
-  if (!p.biomeHealth || typeof p.biomeHealth !== 'object') {
-    p.biomeHealth = Object.fromEntries(BIOMES.map(b => [b.id, 100]));
-  } else {
-    for (const b of BIOMES) {
-      if (typeof p.biomeHealth[b.id] !== 'number') p.biomeHealth[b.id] = 100;
-    }
-  }
-  if (!p.lastHealthRegen) p.lastHealthRegen = new Date().toISOString();
-  if (!p.exhibits || typeof p.exhibits !== 'object') {
-    p.exhibits = Object.fromEntries(BIOMES.map(b => [b.id, [null, null, null]]));
-  } else {
-    for (const b of BIOMES) {
-      if (!Array.isArray(p.exhibits[b.id])) p.exhibits[b.id] = [null, null, null];
-      while (p.exhibits[b.id].length < 3) p.exhibits[b.id].push(null);
-    }
-  }
-  if (!p.lastMuseumCollect) p.lastMuseumCollect = new Date().toISOString();
-  if (typeof p.dailyXpEarned !== 'number') p.dailyXpEarned = 0;
-  if (!p.dailyXpDate) p.dailyXpDate = getTodayYmd();
-  if (typeof p.dailyStreak !== 'number') p.dailyStreak = 0;
-  if (typeof p.streakDate !== 'string') p.streakDate = '';
-  if (!p.xpHistory || typeof p.xpHistory !== 'object') p.xpHistory = {};
-  if (!p.claimedMilestones) p.claimedMilestones = [];
-  if (typeof p.totalPlaytimeSec !== 'number') p.totalPlaytimeSec = 0;
-  return p as GameState;
 }
 
 export function peekSlot(slot: number): GameState | null {
@@ -469,7 +360,7 @@ export function useGameState(slot: number) {
       specimens: [...prev.specimens, specimen],
       labQueue: [...prev.labQueue, specimen.id],
       stamina: Math.max(0, prev.stamina - buffs.collectStaminaCost),
-      fieldNotes: [...prev.fieldNotes, note],
+      fieldNotes: appendNote(prev.fieldNotes, note),
       biomeHealth: { ...prev.biomeHealth, [biomeId]: newHealth },
       stats: {
         ...prev.stats,
@@ -543,9 +434,9 @@ export function useGameState(slot: number) {
       const xpUpdate = applyXpGain(prev, xpGain);
 
       // Generate field note for discoveries
-      const newNotes = [...prev.fieldNotes];
+      let newNotes = prev.fieldNotes;
       if (nextStatus === 'identified' && species) {
-        newNotes.push({
+        newNotes = appendNote(newNotes, {
           id: `note-${Date.now()}-disc`,
           timestamp: new Date().toISOString(),
           biomeId: specimen.biomeId,
@@ -629,9 +520,9 @@ export function useGameState(slot: number) {
       // Fuel cost scales with region tier (1-5)
       const biome = biomeId ? BIOMES.find(b => b.id === biomeId) : undefined;
       const fuelCost = biome ? getRegionFuelCost(biome.regionId) : 1;
-      const newNotes = [...prev.fieldNotes];
+      let newNotes = prev.fieldNotes;
       if (biomeId) {
-        newNotes.push({
+        newNotes = appendNote(newNotes, {
           id: `note-${Date.now()}-exp`,
           timestamp: new Date().toISOString(),
           biomeId,
@@ -812,17 +703,14 @@ export function useGameState(slot: number) {
         achievements: prev.achievements,
         exhibits: prev.exhibits,
         lastMuseumCollect: prev.lastMuseumCollect,
-        fieldNotes: [
-          ...prev.fieldNotes,
-          {
+        fieldNotes: appendNote(prev.fieldNotes, {
             id: `note-${Date.now()}-pub`,
             timestamp: new Date().toISOString(),
             biomeId: 'muir-woods',
             type: 'milestone',
             text: `Published research paper #${newPubCount}. Impact Factor now ${newImpact}. A new chapter begins — old discoveries catalogued, field reset.`,
             emoji: '📜',
-          },
-        ],
+          }),
         impactFactor: newImpact,
         publicationCount: newPubCount,
         // Keep challenge date so we don't re-roll mid-day
